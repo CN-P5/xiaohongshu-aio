@@ -9,7 +9,7 @@ from datetime import datetime
 from .client import XiaohongshuClient
 from .account import AccountManager
 
-app = typer.Typer(help="Xiaohongshu MCP CLI Client")
+app = typer.Typer(help="Xiaohongshu MCP REST API Client")
 console = Console()
 
 
