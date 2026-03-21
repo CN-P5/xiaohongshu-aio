@@ -5,6 +5,8 @@ build/
 dist/
 wheels/
 *.egg-info
+*.exe
 
 # Virtual environments
 .venv
+/cookies.json
