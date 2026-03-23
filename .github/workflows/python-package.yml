@@ -69,4 +69,4 @@ jobs:
         PYPI_SECRET: ${{ secrets.PYPI_SECRET }}
       with:
         password: ${{ env.PYPI_SECRET }}
-        verbose: true
+        skip-existing: true
