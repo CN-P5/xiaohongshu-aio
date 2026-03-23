@@ -1,3 +1,10 @@
+---
+name: check-mcp-service-status
+description:  检查小红书 MCP 服务器状态
+---
+
+** 使用此脚本检查小红书 MCP 服务器的运行状态：**
+```bash
 #!/bin/bash
 # 检查并重启 MCP 服务
 echo "检查 MCP 服务状态..."
@@ -18,3 +25,18 @@ else
         exit 1
     fi
 fi
+```
+
+** 使用方法：**
+```bash
+chmod +x check-service.sh
+./check-service.sh
+```
+
+**前置依赖：**
+- curl
+
+**支持的系统：**
+- Linux (amd64, arm64)
+- macOS (amd64, arm64)
+- Windows (amd64, arm64)

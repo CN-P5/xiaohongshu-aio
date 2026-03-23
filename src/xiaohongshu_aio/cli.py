@@ -8,6 +8,7 @@ from datetime import datetime
 
 from .client import XiaohongshuClient
 from .account import AccountManager
+from .mcp_service import MCPServiceManager
 
 app = typer.Typer(help="Xiaohongshu MCP REST API Client")
 console = Console()
@@ -331,6 +332,76 @@ def user_command(
                 console.print(f"{interaction.get('name')}: {interaction.get('count')}")
         else:
             console.print(f"[red]❌ Error: {result.get('error', 'Unknown error')}[/red]")
+
+
+# MCP Service management commands
+@app.command("mcp")
+def mcp_command(
+    action: str = typer.Argument(..., help="Action: download, status, start, stop, restart, test"),
+    work_dir: Optional[str] = typer.Option(None, help="Working directory"),
+    force: bool = typer.Option(False, help="Force download"),
+):
+    """Manage MCP service"""
+    manager = MCPServiceManager(work_dir=work_dir)
+    
+    if action == "download":
+        console.print("[blue]Downloading MCP binaries...[/blue]")
+        if manager.download_binaries(force=force):
+            console.print("[green]✅ Download completed successfully![/green]")
+        else:
+            console.print("[red]❌ Download failed[/red]")
+            
+    elif action == "status":
+        console.print("[blue]Checking MCP service status...[/blue]")
+        status = manager.get_service_status()
+        
+        table = Table(title="MCP Service Status")
+        table.add_column("Item")
+        table.add_column("Value")
+        
+        table.add_row("Port", str(status["port"]))
+        table.add_row("Port In Use", "✅ Yes" if status["port_in_use"] else "❌ No")
+        if status["port_pid"]:
+            table.add_row("Port PID", str(status["port_pid"]))
+        table.add_row("Process Running", "✅ Yes" if status["process_running"] else "❌ No")
+        if status["process_pid"]:
+            table.add_row("Process PID", str(status["process_pid"]))
+        table.add_row("Server Binary", "✅ Exists" if status["server_binary_exists"] else "❌ Not Found")
+        table.add_row("Login Binary", "✅ Exists" if status["login_binary_exists"] else "❌ Not Found")
+        table.add_row("Server Path", status["server_path"])
+        
+        console.print(table)
+        
+    elif action == "start":
+        console.print("[blue]Starting MCP service...[/blue]")
+        if manager.start_service():
+            console.print("[green]✅ Service started successfully![/green]")
+        else:
+            console.print("[red]❌ Failed to start service[/red]")
+            
+    elif action == "stop":
+        console.print("[blue]Stopping MCP service...[/blue]")
+        if manager.stop_service():
+            console.print("[green]✅ Service stopped successfully![/green]")
+        else:
+            console.print("[red]❌ Failed to stop service[/red]")
+            
+    elif action == "restart":
+        console.print("[blue]Restarting MCP service...[/blue]")
+        if manager.restart_service():
+            console.print("[green]✅ Service restarted successfully![/green]")
+        else:
+            console.print("[red]❌ Failed to restart service[/red]")
+            
+    elif action == "test":
+        console.print("[blue]Testing MCP connection...[/blue]")
+        if manager.test_connection():
+            console.print("[green]✅ Connection successful![/green]")
+        else:
+            console.print("[red]❌ Connection failed[/red]")
+    else:
+        console.print(f"[red]Unknown action: {action}[/red]")
+        console.print("Available actions: download, status, start, stop, restart, test")
 
 
 if __name__ == "__main__":

@@ -1,3 +1,11 @@
+---
+name: restart-mcp-service
+description: 重启小红书 MCP 服务器
+---
+
+使用以下脚本会检查18060端口是否被占用，占用则终止占用进程，释放端口后重启 MCP 服务器：
+
+```bash
 #!/bin/bash
 # 检查并释放端口 18060
 echo "检查端口 18060..."
@@ -50,3 +58,19 @@ else
     echo "❌ MCP 连接失败"
     exit 1
 fi
+```
+
+** 使用方法：**
+
+```bash
+chmod +x start-service.sh
+./start-service.sh
+```
+
+**前置依赖：**
+- curl
+
+**支持的系统：**
+- Linux (amd64, arm64)
+- macOS (amd64, arm64)
+- Windows (amd64, arm64)

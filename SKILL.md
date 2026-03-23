@@ -1,8 +1,7 @@
 ---
-name: xiaohongshu-mcp-client
+name: xiaohongshu-aio
 description: |
-  小红书 MCP 客户端技能，用于管理小红书账号、登录、发布笔记、视频、图文内容、搜索、互动等操作。
-  支持账号管理、登录状态检查、内容发布、Feed管理、互动操作和用户信息查询。
+  小红书多账号管和登录、状态检查、内容发布、小红书笔记和视频发布、点赞评论操作和用户信息查询等需要调用本技能。当用户需要从小红书获取笔记和视频数据、用户数据、发布笔记或视频时需要调用本技能。
 metadata:
   {
     "openclaw": {
@@ -13,7 +12,7 @@ metadata:
   }
 ---
 
-# 小红书 MCP 客户端技能
+# 小红书All in One技能
 
 ## 功能概述
 
@@ -31,15 +30,14 @@ metadata:
 
 ```bash
 cd xiaohongshu-aio
-pip install -e .
+uv pip install -e .
 ```
 
 ## 执行流程
 
 **执行任何操作前，都需要先检查 MCP 服务器是否运行**：
 ```bash
-chmod +x check-service.sh
-./check-service.sh
+xhs check-mcp-service-status
 ```
 
 ### 1. 账号管理流程
