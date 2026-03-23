@@ -4,7 +4,6 @@ import typer
 from rich.console import Console
 from rich.table import Table
 from typing import Optional, List
-from datetime import datetime
 
 from .client import XiaohongshuClient
 from .account import AccountManager
@@ -255,32 +254,18 @@ def feed_command(
 # Interaction commands
 @app.command("interact")
 def interact_command(
-    action: str = typer.Argument(..., help="Action: like, favorite, comment"),
+    action: str = typer.Argument(..., help="Action: comment, reply"),
     feed_id: str = typer.Argument(..., help="Feed ID"),
     xsec_token: str = typer.Argument(..., help="Xsec token"),
     content: Optional[str] = typer.Option(None, help="Comment content"),
-    unlike: bool = typer.Option(False, help="Unlike"),
-    unfavorite: bool = typer.Option(False, help="Unfavorite"),
+    comment_id: Optional[str] = typer.Option(None, help="Comment ID to reply (for reply action)"),
+    user_id: Optional[str] = typer.Option(None, help="User ID to reply (for reply action)"),
     base_url: Optional[str] = typer.Option(None, help="MCP server base URL"),
 ):
     """Interact with feeds"""
     client = XiaohongshuClient(base_url=base_url)
     
-    if action == "like":
-        result = client.like_feed(feed_id=feed_id, xsec_token=xsec_token, unlike=unlike)
-        if result.get("success"):
-            console.print(f"[green]✅ {'Unliked' if unlike else 'Liked'} successfully![/green]")
-        else:
-            console.print(f"[red]❌ Error: {result.get('error', 'Unknown error')}[/red]")
-            
-    elif action == "favorite":
-        result = client.favorite_feed(feed_id=feed_id, xsec_token=xsec_token, unfavorite=unfavorite)
-        if result.get("success"):
-            console.print(f"[green]✅ {'Unfavorited' if unfavorite else 'Favorited'} successfully![/green]")
-        else:
-            console.print(f"[red]❌ Error: {result.get('error', 'Unknown error')}[/red]")
-            
-    elif action == "comment":
+    if action == "comment":
         if not content:
             console.print("[red]❌ Comment content is required[/red]")
             return
@@ -289,6 +274,26 @@ def interact_command(
             console.print("[green]✅ Comment posted successfully![/green]")
         else:
             console.print(f"[red]❌ Error: {result.get('error', 'Unknown error')}[/red]")
+            
+    elif action == "reply":
+        if not content:
+            console.print("[red]❌ Comment content is required[/red]")
+            return
+        if not comment_id and not user_id:
+            console.print("[red]❌ Either comment_id or user_id is required for reply[/red]")
+            return
+        result = client.reply_comment(
+            feed_id=feed_id,
+            xsec_token=xsec_token,
+            content=content,
+            comment_id=comment_id,
+            user_id=user_id
+        )
+        if result.get("success"):
+            console.print("[green]✅ Reply posted successfully![/green]")
+        else:
+            console.print(f"[red]❌ Error: {result.get('error', 'Unknown error')}[/red]")
+    
 
 
 # User commands

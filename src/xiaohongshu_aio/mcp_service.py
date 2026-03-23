@@ -15,10 +15,11 @@ import shutil
 import time
 import signal
 from pathlib import Path
-from typing import Optional, Tuple
+from typing import Optional, Tuple, Dict
 from urllib.request import urlopen, Request
 from urllib.error import URLError, HTTPError
 import json
+import httpx
 
 
 MCP_PORT = 18060
@@ -103,13 +104,43 @@ class MCPServiceManager:
         except (URLError, HTTPError) as e:
             raise RuntimeError(f"Failed to fetch latest version: {e}")
     
+    def get_release_assets(self) -> dict:
+        """Get release assets from GitHub API
+        
+        Returns:
+            Dict mapping asset names to download URLs
+        """
+        request = Request(GITHUB_API_RELEASES)
+        request.add_header("Accept", "application/vnd.github.v3+json")
+        
+        try:
+            with urlopen(request, timeout=30) as response:
+                data = json.loads(response.read().decode("utf-8"))
+                assets = data.get("assets", [])
+                return {asset["name"]: asset["browser_download_url"] for asset in assets}
+        except (URLError, HTTPError) as e:
+            raise RuntimeError(f"Failed to fetch release assets: {e}")
+    
     def download_file(self, url: str, dest: Path) -> bool:
         """Download file from URL"""
         try:
             request = Request(url)
             with urlopen(request, timeout=300) as response:
+                total_size = int(response.headers.get("Content-Length", 0))
+                downloaded = 0
+                chunk_size = 8192
                 with open(dest, "wb") as f:
-                    shutil.copyfileobj(response, f)
+                    while True:
+                        chunk = response.read(chunk_size)
+                        if not chunk:
+                            break
+                        f.write(chunk)
+                        downloaded += len(chunk)
+                        if total_size > 0:
+                            progress = (downloaded / total_size) * 100
+                            print(f"\rDownloading: {progress:.1f}% ({downloaded}/{total_size} bytes)", end="", flush=True)
+                    if total_size > 0:
+                        print()
             return True
         except (URLError, HTTPError) as e:
             print(f"Download failed: {e}")
@@ -132,37 +163,36 @@ class MCPServiceManager:
         
         print(f"Detecting system: {self.os_type}, architecture: {self.arch_type}")
         
-        version = self.get_latest_version()
-        print(f"Latest version: {version}")
+        assets = self.get_release_assets()
         
-        base_url = f"https://github.com/{GITHUB_REPO}/releases/download/{version}"
+        server_pattern = f"xiaohongshu-mcp-{self.os_type}-{self.arch_type}"        
+        server_file = None
+        server_url = None
         
-        server_tar = f"xiaohongshu-mcp-{self.os_type}-{self.arch_type}.tar.gz"
-        login_tar = f"xiaohongshu-login-{self.os_type}-{self.arch_type}.tar.gz"
+        for name, url in assets.items():
+            if name.startswith(server_pattern):
+                server_file = name
+                server_url = url
         
-        server_tar_path = self.work_dir / server_tar
-        login_tar_path = self.work_dir / login_tar
+        if not server_file or not server_url:
+            raise RuntimeError(f"Server binary not found for {self.os_type}-{self.arch_type}")
         
-        server_url = f"{base_url}/{server_tar}"
-        login_url = f"{base_url}/{login_tar}"
-        
-        print(f"Downloading server: {server_url}")
-        if not self.download_file(server_url, server_tar_path):
-            return False
-        
-        print(f"Downloading login tool: {login_url}")
-        if not self.download_file(login_url, login_tar_path):
+        print(f"Latest version assets found:{server_file}")        
+        server_path = self.work_dir / server_file
+        print(f"Downloading: {server_url}")
+        if not self.download_file(server_url, server_path):
             return False
         
         print("Extracting files...")
         try:
-            with tarfile.open(server_tar_path, "r:gz") as tar:
-                tar.extractall(self.work_dir)
-            server_tar_path.unlink()
-            
-            with tarfile.open(login_tar_path, "r:gz") as tar:
-                tar.extractall(self.work_dir)
-            login_tar_path.unlink()
+            if server_file.endswith(".zip"):
+                import zipfile
+                with zipfile.ZipFile(server_path, "r") as zip_ref:
+                    zip_ref.extractall(self.work_dir)
+            else:
+                with tarfile.open(server_path, "r:gz") as tar:
+                    tar.extractall(self.work_dir)
+            server_path.unlink()
         except Exception as e:
             print(f"Extraction failed: {e}")
             return False
@@ -170,8 +200,10 @@ class MCPServiceManager:
         if self.os_type != "windows":
             server_path = self._get_server_path()
             login_path = self._get_login_path()
-            server_path.chmod(server_path.stat().st_mode | 0o755)
-            login_path.chmod(login_path.stat().st_mode | 0o755)
+            if server_path.exists():
+                server_path.chmod(server_path.stat().st_mode | 0o755)
+            if login_path.exists():
+                login_path.chmod(login_path.stat().st_mode | 0o755)
         
         print(f"Download complete!")
         print(f"  Server: {self._get_server_path()}")
@@ -399,19 +431,51 @@ class MCPServiceManager:
         }
     
     def test_connection(self) -> bool:
-        """Test MCP connection
+        """Test MCP connection using httpx (similar to start-service.sh)
         
         Returns:
             True if connection successful
         """
-        import socket
-        
-        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        sock.settimeout(5)
         try:
-            result = sock.connect_ex(('localhost', MCP_PORT))
-            return result == 0
-        except socket.error:
+            with httpx.Client(timeout=10.0) as client:
+                response = client.post(
+                    f"http://localhost:{MCP_PORT}/mcp",
+                    headers={
+                        "Content-Type": "application/json",
+                        "Accept": "application/json, text/event-stream"
+                    },
+                    json={
+                        "jsonrpc": "2.0",
+                        "method": "initialize",
+                        "params": {
+                            "protocolVersion": "2024-11-05",
+                            "capabilities": {},
+                            "clientInfo": {
+                                "name": "test",
+                                "version": "1.0"
+                            }
+                        },
+                        "id": 1
+                    }
+                )
+                
+                # Check if we got a valid response with session ID
+                if response.status_code == 200:
+                    session_id = response.headers.get("Mcp-Session-Id")
+                    if session_id:
+                        print(f"MCP connection successful, Session: {session_id}")
+                        return True
+                    else:
+                        # Even without session ID, 200 response means service is responding
+                        print("MCP connection successful (no session ID)")
+                        return True
+                else:
+                    print(f"MCP connection failed with status: {response.status_code}")
+                    return False
+                    
+        except httpx.RequestError as e:
+            print(f"MCP connection failed: {e}")
             return False
-        finally:
-            sock.close()
+        except Exception as e:
+            print(f"Unexpected error testing MCP connection: {e}")
+            return False
