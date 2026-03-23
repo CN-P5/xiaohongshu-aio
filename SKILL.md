@@ -36,12 +36,13 @@ metadata:
 
 ```bash
 cd xiaohongshu-aio
-uv pip install -e .
+uv sync
+uv run xhs --help
 ```
 
 #### 方案2：从 PyPI 安装(推荐)
 
-1. 执行：`pip install -U xiaohongshu-aio`
+1. 执行：`uv tool install xiaohongshu-aio`
 
 ### 安装启动 MCP 服务器
 1. 执行：`xhs mcp download` 下载 MCP 服务器

@@ -44,12 +44,13 @@ A Python client for Xiaohongshu MCP (Model Context Protocol) REST API, providing
 ### Install from source
 ```bash
 cd xiaohongshu-aio
-uv pip install -e .
+uv sync
+uv run xhs --help
 ```
 
 ### Install from PyPI (Recommended)
 ```bash
-pip install -U xiaohongshu-aio
+uv tool install xiaohongshu-aio
 ```
 
 ### Install and Start MCP Server
@@ -109,7 +110,7 @@ xhs login logout
 ### Publishing Content
 ```bash
 # Publish image content
-xhs publish "Title" "Content" "https://example.com/image1.jpg" "https://example.com/image2.jpg" --tags food travel
+xhs publish "Title" "Content" "https://example.com/image1.jpg" "https://example.com/image2.jpg" --tags food,travel
 
 # Publish video content
 xhs publish "Video Title" "Video content" "C:\path\to\video.mp4" --is-video

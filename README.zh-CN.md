@@ -44,12 +44,13 @@
 ### 从源码安装
 ```bash
 cd xiaohongshu-aio
-uv pip install -e .
+uv sync
+uv run xhs --help
 ```
 
 ### 从 PyPI 安装（推荐）
 ```bash
-pip install -U xiaohongshu-aio
+uv tool install xiaohongshu-aio
 ```
 
 ### 安装并启动 MCP 服务器
@@ -109,7 +110,7 @@ xhs login logout
 ### 发布内容
 ```bash
 # 发布图文内容
-xhs publish "标题" "内容" "https://example.com/image1.jpg" "https://example.com/image2.jpg" --tags 美食 旅行
+xhs publish "标题" "内容" "https://example.com/image1.jpg" "https://example.com/image2.jpg" --tags 美食,旅行
 
 # 发布视频内容
 xhs publish "视频标题" "视频内容" "C:\path\to\video.mp4" --is-video

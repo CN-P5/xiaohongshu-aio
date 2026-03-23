@@ -158,6 +158,16 @@ def publish_command(
     client = XiaohongshuClient(base_url=base_url)
     
     try:
+        if r"\r\n" in content:
+            content = content.replace(r"\r\n", "\r\n")
+        if r"\n" in content:
+            content = content.replace(r"\n", "\n")
+        if len(tags) == 1:
+            if "," in tags[0]:
+                tags = tags[0].split(",")
+        # console.print(f"[red]title: {title}[/red]")
+        # console.print(f"[red]content:\r\n {content}[/red]")
+        # console.print(f"[red]tags: {tags}[/red]")
         if is_video:
             if len(media) != 1:
                 console.print("[red]❌ Video publishing requires exactly one video file path[/red]")
