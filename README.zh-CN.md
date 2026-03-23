@@ -28,9 +28,8 @@
   - 获取 feed 详细信息
 
 - **互动功能**
-  - 点赞/取消点赞 feeds
-  - 收藏/取消收藏 feeds
   - 发表评论
+  - 回复评论
 
 - **用户信息**
   - 获取当前用户资料
@@ -45,8 +44,18 @@
 ### 从源码安装
 ```bash
 cd xiaohongshu-aio
-pip install -e .
+uv pip install -e .
 ```
+
+### 从 PyPI 安装（推荐）
+```bash
+pip install -U xiaohongshu-aio
+```
+
+### 安装并启动 MCP 服务器
+1. 下载 MCP 服务器：`xhs mcp download`
+2. 启动 MCP 服务器：`xhs mcp start`
+3. 检查状态：`xhs mcp status`
 
 ## 使用方法
 
@@ -126,20 +135,14 @@ xhs feed list --base-url http://localhost:18060
 
 ### 互动操作
 ```bash
-# 点赞 feed
-xhs interact like "feed123" "token123"
-
-# 取消点赞 feed
-xhs interact like "feed123" "token123" --unlike
-
-# 收藏 feed
-xhs interact favorite "feed123" "token123"
-
 # 发表评论
 xhs interact comment "feed123" "token123" --content "很棒的帖子！"
 
+# 回复评论
+xhs interact reply "feed123" "token123" --comment-id "comment_id" --content "回复内容"
+
 # 使用自定义服务器 URL
-xhs interact like "feed123" "token123" --base-url http://localhost:18060
+xhs interact comment "feed123" "token123" --content "很棒的帖子！" --base-url http://localhost:18060
 ```
 
 ### 用户信息
@@ -152,6 +155,27 @@ xhs user profile --user-id "user123" --xsec-token "token123"
 
 # 使用自定义服务器 URL
 xhs user me --base-url http://localhost:18060
+```
+
+### MCP 服务器管理
+```bash
+# 下载 MCP 服务器
+xhs mcp download
+
+# 测试 MCP 连接
+xhs mcp test
+
+# 启动 MCP 服务器
+xhs mcp start
+
+# 停止 MCP 服务器
+xhs mcp stop
+
+# 重启 MCP 服务器
+xhs mcp restart
+
+# 检查 MCP 服务器状态
+xhs mcp status
 ```
 
 ## 配置
@@ -174,7 +198,8 @@ xiaohongshu-aio/
 │       ├── __init__.py          # 包初始化
 │       ├── client.py            # REST API 客户端
 │       ├── account.py           # 账号管理
-│       └── cli.py               # 命令行界面
+│       ├── cli.py               # 命令行界面
+│       └── mcp_service.py       # MCP 服务器管理
 ├── pyproject.toml               # 项目配置
 ├── README.md                    # 本文档
 └── user_cookies.json            # 账号 cookies 存储
