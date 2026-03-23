@@ -65,3 +65,8 @@ jobs:
     
     - name: Publish to PyPI
       uses: pypa/gh-action-pypi-publish@release/v1
+      env:
+        PYPI_SECRET: ${{ secrets.PYPI_SECRET }}
+      with:
+        password: ${{ env.PYPI_SECRET }}
+        verbose: true
